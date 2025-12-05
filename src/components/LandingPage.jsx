@@ -4,7 +4,7 @@ import { useStoreContext } from "../contextApi/ContextApi";
 const THEME_KEY = "theme";
 
 export const LandingPage = () => {
-  const{token} = useStoreContext;
+  const{token} = useStoreContext();
   console.log("Token in Landing :"+token);
 
   const [isDark, setIsDark] = useState(() => {
