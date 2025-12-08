@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import Graph from './Graph';
 import { dummyData } from '../../dummy/data';
 import { useStoreContext } from '../../contextApi/ContextApi';
-import { useFetchTotalClicks } from '../../hooks/useQuery';
+import { useFetchMyShortUrls, useFetchTotalClicks } from '../../hooks/useQuery';
 import ShortenPopUp from './ShortenPopUp';
+import ShortenUrlList from './ShortenUrlList';
 
 const DashboardLayout = () => {
   const { token } = useStoreContext();
   const [shortenPopUp, setShortenPopUp] = useState(false);
-  const refetch = false;
 
   function onError() {
     console.log('ERROR');
@@ -16,8 +16,10 @@ const DashboardLayout = () => {
 
   const {
     isLoading: loader,
-    data: totalClicks = [], // ✅ default to []
+    data: totalClicks,
   } = useFetchTotalClicks(token, onError);
+
+    const { isLoading,data: myShortenUrls,refetch, } = useFetchMyShortUrls(token, onError);
 
   return (
     <div>
@@ -44,6 +46,14 @@ const DashboardLayout = () => {
             <button onClick={() => setShortenPopUp(true)}>
               Create a new Short URL
             </button>
+          </div>
+
+          <div>
+            { !isLoading && myShortenUrls.length === 0 ?(
+              <div>You Haven't Created any div Yet</div>
+            ):(
+              <ShortenUrlList data ={myShortenUrls}/>
+            )}
           </div>
         </div>
       )}
