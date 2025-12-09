@@ -5,6 +5,7 @@ import { useStoreContext } from '../../contextApi/ContextApi';
 import { useFetchMyShortUrls, useFetchTotalClicks } from '../../hooks/useQuery';
 import ShortenPopUp from './ShortenPopUp';
 import ShortenUrlList from './ShortenUrlList';
+import LoadingPage from '../loadingPage';
 
 const DashboardLayout = () => {
   const { token } = useStoreContext();
@@ -12,6 +13,7 @@ const DashboardLayout = () => {
 
   function onError() {
     console.log('ERROR');
+    navigate("/error");
   }
 
   const {
@@ -24,7 +26,7 @@ const DashboardLayout = () => {
   return (
     <div>
       {loader ? (
-        <p>Loading......</p>
+        <LoadingPage/>
       ) : (
         <div>
           <div className="relative w-full min-h-[300px]">

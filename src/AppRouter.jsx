@@ -10,6 +10,7 @@ import Login from './components/Login'
 import DashboardLayout from './components/Dashboard/DashboardLayout'
 import { Route, Routes } from "react-router-dom";
 import PrivateRoute from "./PrivateRoute";
+import ErrorPage from "./components/ErrorPage";
 const AppRouter = () => {
   return(
     <>
@@ -22,6 +23,8 @@ const AppRouter = () => {
         <Route path='/login' element={<PrivateRoute publicPage={true} > <Login/> </PrivateRoute>} />
         {/* <Route path='/login' element={ <Login/>}/> */}
         <Route path='/dashboard' element={<PrivateRoute publicPage={false} >  <DashboardLayout /> </PrivateRoute>} />
+        <Route path='/error' element={<ErrorPage error="Error Occurred" />} />
+        <Route path='*' element={<ErrorPage error="Oops! The page you're looking for doesn't exist."/>} />
       </Routes>
       <Footer />
     </>
