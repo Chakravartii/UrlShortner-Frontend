@@ -1,144 +1,195 @@
 import dayjs from 'dayjs';
-import React, { useEffect, useState,Fragment} from 'react'
+import React, { useEffect, useState } from 'react'
 import CopyToClipboard from 'react-copy-to-clipboard';
-import {LiaCheckSolid} from 'react-icons/lia'
-import { IoCopy } from 'react-icons/io5';
 import { useStoreContext } from '../../contextApi/ContextApi';
-import { Link, useNavigate } from 'react-router-dom';
-import { nav } from 'motion/react-client';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/api';
-import { Hourglass } from 'react-loader-spinner';
+import { Card, Button, Badge } from '../UI';
+import { HiCheck, HiDocumentDuplicate, HiChartBar, HiExternalLink } from 'react-icons/hi';
 import Graph from './Graph';
+import toast from 'react-hot-toast';
 
+const ShortenItem = ({ originalUrl, shortUrl, clickCount, createdAt, refetch }) => {
+  const subDomain = import.meta.env.VITE_REACT_SUBDOMAIN.replace(/^https?:\/\//, "");
+  const { token } = useStoreContext();
+  const [isCopied, setIsCopied] = useState(false);
+  const [analyticsToggle, setAnalyticsToggle] = useState(false);
+  const [selectedUrl, setSelectedUrl] = useState("");
+  const [loader, setLoader] = useState(false);
+  const [analyticData, setAnalyticData] = useState([]);
+  const navigate = useNavigate();
 
-const ShortenItem = ({originalUrl,shortUrl,clickCount,createdAt}) => {
-    const subDomain = import.meta.env.VITE_REACT_SUBDOMAIN.replace(
-        /^https?:\/\//,"");
+  const handleCopy = () => {
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
 
-const {token} = useStoreContext();
-const [isCopied,setIsCopied] =useState(false);
-const [analyticsTogle,setAnalyticsToggle] = useState(false);
-const [selectedUrl,setSelectedUrl] = useState("");
-const [loader,setLoader] = useState(false);
-const [analyticData,setAnalyticData] = useState([]);
-const navigate = useNavigate();
-
-const analyticsHandler = (shortUrl)=>{
-    if(!analyticsTogle){
-        setSelectedUrl(shortUrl);
+  const analyticsHandler = (shortUrl) => {
+    if (!analyticsToggle) {
+      setSelectedUrl(shortUrl);
     }
-    setAnalyticsToggle(!analyticsTogle);
-}
+    setAnalyticsToggle(!analyticsToggle);
+  };
 
-const useFetchMyShortUrl = async ()=>{
-    try{
-        const endDate = dayjs().format("YYYY-MM-DDTHH:mm:ss");
-        const startDate = dayjs().subtract(7, "day").format("YYYY-MM-DDTHH:mm:ss");
+  const fetchAnalytics = async () => {
+    setLoader(true);
+    try {
+      const endDate = dayjs().format("YYYY-MM-DDTHH:mm:ss");
+      const startDate = dayjs().subtract(7, "day").format("YYYY-MM-DDTHH:mm:ss");
+      const url = `/api/url/analytics/${selectedUrl}?startDate=${startDate}&endDate=${endDate}`;
 
-        const url = `/api/url/analytics/${selectedUrl}?startDate=${startDate}&endDate=${endDate}`;
-
-        const {data} = await api.get(url,{
-        headers:{
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization:"Bearer "+token,
-            },
-        });
-        setAnalyticData(data);
-        console.log(data);
-        setSelectedUrl("");
+      const { data } = await api.get(url, {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: "Bearer " + token,
+        },
+      });
+      setAnalyticData(data);
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to load analytics");
+      navigate("/error");
+    } finally {
+      setLoader(false);
     }
-    catch(error){
-        navigate("/dashboard");
-        console.log(error);
-    }finally{
-        setLoader(false);
-    }
-} 
+  };
 
-    useEffect(()=>{
-        if(selectedUrl)useFetchMyShortUrl();
-    },[selectedUrl]);
+  useEffect(() => {
+    if (selectedUrl) fetchAnalytics();
+  }, [selectedUrl]);
+
+  // Truncate URL for display
+  const truncateUrl = (url, maxLength = 50) => {
+    return url.length > maxLength ? url.substring(0, maxLength) + "..." : url;
+  };
+
+  const shortUrlFull = `${subDomain}/${shortUrl}`;
 
   return (
-    <div className='border'>
-        <a
-            href={`http://${subDomain}/${shortUrl}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3 py-1 bg-indigo-50 text-indigo-600 font-medium rounded-full 
-                        hover:bg-indigo-100 hover:text-indigo-700 transition"
-            >
-            {subDomain}/{shortUrl}
-        </a>
+    <>
+      <Card className="hover:shadow-lg transition-all">
+        {/* Header Row */}
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex-1 min-w-0">
+            {/* Short URL */}
+            <div className="mb-4">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-semibold uppercase">
+                Short URL
+              </p>
+              <a
+                href={`http://${shortUrlFull}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-mono text-sm break-all"
+              >
+                {shortUrlFull}
+                <HiExternalLink className="w-4 h-4 flex-shrink-0" />
+              </a>
+            </div>
 
-        <p>Original: {originalUrl}</p>
-        <p>Clicks: {clickCount}</p>
+            {/* Original URL */}
+            <div>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-semibold uppercase">
+                Original URL
+              </p>
+              <p className="text-sm text-gray-700 dark:text-gray-300 break-all">
+                {truncateUrl(originalUrl)}
+              </p>
+            </div>
+          </div>
 
-        <span>
-            Created At : {dayjs (createdAt).format("MMM DD, YYYY")}
-        </span>
-        <CopyToClipboard
-                onCopy={() => setIsCopied(true)}
-                text={`${import.meta.env.VITE_REACT_SUBDOMAIN + "/" + `${shortUrl}`}`}
+          {/* Stats */}
+          <div className="flex gap-4 md:ml-4 flex-shrink-0">
+            <div className="text-center">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-semibold">
+                CLICKS
+              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {clickCount || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Row */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-4 items-start sm:items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Badge variant="gray">
+              {dayjs(createdAt).format("MMM DD, YYYY")}
+            </Badge>
+          </div>
+
+          <div className="flex gap-2 w-full sm:w-auto">
+            {/* Copy Button */}
+            <CopyToClipboard
+              onCopy={handleCopy}
+              text={shortUrlFull}
             >
-                <div className="flex cursor-pointer gap-1 items-center bg-btnColor py-2  font-semibold shadow-md shadow-slate-500 px-6 rounded-md text-black ">
-                <button className="">{isCopied ? "Copied" : "Copy"}</button>
+              <Button
+                variant={isCopied ? "secondary" : "primary"}
+                size="md"
+                className="flex-1 sm:flex-none"
+              >
                 {isCopied ? (
-                    <LiaCheckSolid className="text-md" />
+                  <>
+                    <HiCheck className="w-4 h-4" />
+                    Copied
+                  </>
                 ) : (
-                    <IoCopy className="text-md" />
+                  <>
+                    <HiDocumentDuplicate className="w-4 h-4" />
+                    Copy
+                  </>
                 )}
-                </div>
+              </Button>
             </CopyToClipboard>
 
-            <div onClick={()=> analyticsHandler(shortUrl)}>
-                <button>Analytics</button>
-            </div>
+            {/* Analytics Button */}
+            <Button
+              variant={analyticsToggle ? "secondary" : "outline"}
+              size="md"
+              onClick={() => analyticsHandler(shortUrl)}
+              className="flex-1 sm:flex-none"
+            >
+              <HiChartBar className="w-4 h-4" />
+              {analyticsToggle ? "Hide" : "Analytics"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Analytics Section */}
+        {analyticsToggle && (
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
+              Last 7 Days Analytics
+            </h4>
             
-            
-            <React.Fragment>
-                    <div className={`${
-                    analyticsTogle ? "flex" : "hidden"
-                }  max-h-96 sm:mt-0 mt-5 min-h-96 relative  border-t-2 w-[100%] overflow-hidden `}>
-                        
-                 {loader ? (
-                <div className="min-h-[calc(450px-140px)] flex justify-center items-center w-full">
-                    <div className="flex flex-col items-center gap-1">
-                    <Hourglass
-                        visible={true}
-                        height="50"
-                        width="50"
-                        ariaLabel="hourglass-loading"
-                        wrapperStyle={{}}
-                        wrapperClass=""
-                        colors={['#306cce', '#72a1ed']}
-                        />
-                        <p className='text-slate-700'>Please Wait...</p>
-                    </div>
+            {loader ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    Loading analytics...
+                  </p>
                 </div>
-                ) : ( 
-                    <>{analyticData.length === 0 && (
-                        <div className="absolute flex flex-col  justify-center sm:items-center items-end  w-full left-0 top-0 bottom-0 right-0 m-auto">
-                            <h1 className=" text-slate-800 font-serif sm:text-2xl text-[15px] font-bold mb-1">
-                                No Data For This Time Period
-                            </h1>
-                            <h3 className="sm:w-96 w-[90%] sm:ml-0 pl-6 text-center sm:text-lg text-[12px] text-slate-600 ">
-                                Share your short link to view where your engagements are
-                                coming from
-                            </h3>
-                        </div>
-                    )}
-                        <Graph graphData={analyticData} />
-                    </>
-                    )}
-                    </div>
+              </div>
+            ) : analyticData.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
+                  No data available for this period
+                </p>
+              </div>
+            ) : (
+              <div className="h-64 md:h-72">
+                <Graph graphData={analyticData} />
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+    </>
+  );
+};
 
-            </React.Fragment>
-            
-    </div>
-    
-  )
-}
-
-export default ShortenItem
+export default ShortenItem;
